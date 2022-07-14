@@ -8,17 +8,20 @@ FROM opencog/ros-indigo-base
 MAINTAINER Linas Vepštas "linasvepstas@gmail.com"
 
 # Install required packages
-ENV LAST_OS_UPDATE 2016-02-18
+ENV LAST_OS_UPDATE 2016-07-01
+
 RUN apt-get -y update
 RUN apt-get -y upgrade
 # Base stuff for cogutil. All on one line, to avoid error
 # `Cannot create container with more than 127 parents`
+
+#Verify using correct cmake
+#RUN cmake --version
 RUN apt-get -y install gcc g++ cmake binutils-dev libiberty-dev \
     libboost-dev libboost-date-time-dev libboost-filesystem-dev \
     libboost-program-options-dev libboost-regex-dev \
     libboost-serialization-dev libboost-system-dev libboost-thread-dev \
     cxxtest
-
 # Additional stuff needed to build and run relex.
 RUN apt-get -y install wordnet-dev wordnet-sense-index openjdk-7-jdk \
     ant libcommons-logging-java libgetopt-java
@@ -27,7 +30,7 @@ RUN apt-get -y install wordnet-dev wordnet-sense-index openjdk-7-jdk \
 # Additional stuff for OpenCog. We need telnet as a debug utility.
 # Need wget to download link-grammar source.
 # Need unzip to unzip JWNL.
-RUN apt-get -y install guile-2.0-dev cython unixodbc-dev odbc-postgresql \
+RUN apt-get -y install guile-2.2-dev cython unixodbc-dev odbc-postgresql \
     wget telnet locales rlwrap unzip
 
 # -------------------------------------------------------------
@@ -55,7 +58,7 @@ RUN (unzip jwnl14-rc2.zip jwnl14-rc2/jwnl.jar ; \
 WORKDIR /src
 
 # Touch this tag to grab the latest version of LinkGrammar.
-ENV LAST_LG_UPDATE 2016-02-18
+ENV LAST_LG_UPDATE 2016-07-01
 
 # Download the current released version of link-grammar.
 # We do NOT want to git-clone this; the git version is unstable;
@@ -103,11 +106,18 @@ RUN export LANG=en_US.UTF-8
 
 # -------------------------------------------------------------
 USER root
+# Force using newer packages/deps
+RUN sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 60 --slave /usr/bin/g++ g++ /usr/bin/g++-9
+RUN gcc -v
+RUN sudo apt remove -y 'libboost.*'-dev''
+RUN apt-get -y install -f libboost1.67-dev
+# Check libboost version
+# RUN cat /usr/include/boost/version.hpp | grep "BOOST_LIB_VERSION"
 WORKDIR /opencog
 
 # Change line below on rebuild. Will use Docker cache up to this line,
 # twigging this date will update the opencog sources.
-ENV LAST_SOFTWARE_UPDATE 2016-03-10
+ENV LAST_SOFTWARE_UPDATE 2022-07-01
 
 # Git pull for all packages
 RUN cd /opencog/ && find . -maxdepth 1 -mindepth 1 -type d \
@@ -116,6 +126,7 @@ RUN cd /opencog/ && find . -maxdepth 1 -mindepth 1 -type d \
 # Build the base software.
 RUN (mkdir /opencog/cogutil/build; cd /opencog/cogutil/build; \
 	cmake ..; make -j6; make install)
+# Tried removing threading here to check for race condition. It wasnt that
 RUN (mkdir /opencog/atomspace/build; cd /opencog/atomspace/build; \
 	cmake ..; make -j12; make install)
 RUN (mkdir /opencog/opencog/build; cd /opencog/opencog/build; \

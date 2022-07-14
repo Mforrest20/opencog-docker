@@ -15,12 +15,21 @@ MAINTAINER Linas Vepštas "linasvepstas@gmail.com"
 # http://stackoverflow.com/questions/25019183/docker-java7-install-fail
 ENV DEBIAN_FRONTEND noninteractive
 
-ENV LAST_OS_UPDATE 2016-02-29
+ENV LAST_OS_UPDATE 2016-07-01
 RUN apt-get -y update
 RUN apt-get -y upgrade
 
 # Need software-properties-common for `add-apt-repository` command
 RUN apt-get -y install wget software-properties-common
+RUN sudo add-apt-repository ppa:george-edison55/cmake-3.x
+RUN sudo add-apt-repository ppa:mhier/libboost-latest
+RUN apt-get -y upgrade
+RUN sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+RUN sudo add-apt-repository ppa:dank/guile-2.2
+RUN apt update
+RUN sudo apt -y install gcc-9
+RUN sudo apt -y install g++-9
+RUN apt-get install -y guile-2.2
 RUN wget http://packages.ros.org/ros.key -O - | sudo apt-key add -
 RUN echo "deb http://packages.ros.org/ros/ubuntu trusty main" > /etc/apt/sources.list.d/ros-latest.list
 RUN apt-get -y update
